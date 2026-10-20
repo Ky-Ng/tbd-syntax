@@ -57,9 +57,9 @@ If `which slurm` returns `slurm not found`, this means that you may be running l
 
 - Use modular design and avoid rewriting code within an experiment folder; push back for a refactor when needed. Use infrastructure as code principles, e.g. use a python file for constants like the Context Free Grammar or .json files for model configs.
 
-- When creating HuggingFace datasets, you can use ./data as staging before uploading to my account, "kylelovesllms". Use a dataset collection named `translation-syntax-datasets-<EXPERIMENT_NUMBER>` (e.g. `translation-syntax-datasets-01_grammar_v1`)
+- When creating HuggingFace datasets, you can use ./data as staging before uploading to my account, "kylelovesllms". Use a dataset collection named `translation-syntax-datasets-<folder-name>` (e.g. `translation-syntax-datasets-zapanese_zenglish_simple`)
 
-- When saving model checkpoints, save them in the experiments ./artifacts folder as a staging before uploading to my account, "kylelovesllms". Use a model collection named `translation-syntax-models-<EXPERIMENT_NUMBER>-<MODEL>-<STEPS>` (e.g. `translation-syntax-01_grammar_v1-gpt2-2l2h128d10ep256bsz3lr01drop-1000`) 
+- When saving model checkpoints, save them in the experiments ./artifacts folder as a staging before uploading to my account, "kylelovesllms". Use a model collection named `translation-syntax-<folder-name>-<STEPS>` (e.g. `translation-syntax-01_grammar_v1-gpt2-2l2h128d10ep256bsz3lr01drop-1000`) 
 
 - Log training runs to Wandb. Use filters programatically and ask me often which Project I would like to put the wandb output run into. Specifically, I prefer having more fine grained Groups (e.g. model, seed). Different datasets and steps should be logged as separate Projects named `<Model>-<Dataset>-<Steps>`
 
@@ -68,3 +68,11 @@ If `which slurm` returns `slurm not found`, this means that you may be running l
     - Finished model runs should also have a `Report-<Model>-<Dataset>-<Steps>.md` written in the results folder.
 
 - HF Models and Datasets should be public
+
+## Coding Conventions
+
+### Functions
+Every functions should have the following code:
+1. Use NumPy style docstrings which name parameters, and return values in addition to the types.
+2. In function docstrings, include a one sentence description of the function as the first line; after the return description, include example usage, input and output of the code
+3. In functions which uses tensors, please use JaxTyping (required for function args), may be used elswhere in the code when applicable (e.g. def matmul(W: Float[Tensor, "dim1, dim2"], ...))

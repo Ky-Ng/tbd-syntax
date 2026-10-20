@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Codebase Structure</title>
+<!--
+  Dependency-free viewer for structure.js (edit THAT file, not this one, when the codebase changes).
+  Open directly from disk: file:///.../structure-visualizer/codebase-structure.html
+
+  Click a file   -> right panel shows its description and function signatures
+                    red arrows INTO it   = what it requires / imports
+                    green arrows OUT     = what it provides to others
+  Top-right button toggles every function's sample input/output open or closed.
+-->
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6b66; --line: #d9d9d4;
+    --node: #ffffff; --node-ink: #1d1d1b; --node-stroke: #8a8a84; --node-sel: #fff4cc;
+    --edge: #b9b9b3; --req: #d23f3f; --prov: #2e9e4f; --code: #f0f0ec; --accent: #3b5bdb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161614; --panel: #1f1f1c; --ink: #ebebe6; --muted: #a0a099; --line: #3a3a36;
+      --node: #262623; --node-ink: #ebebe6; --node-stroke: #777770; --node-sel: #4a3f14;
+      --edge: #55554f; --req: #ff6b6b; --prov: #51cf66; --code: #2b2b27; --accent: #91a7ff;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  header .legend { display: flex; gap: 14px; color: var(--muted); font-size: 12px; flex-wrap: wrap; }
+  header .legend span::before { content: ""; display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--edge); margin-right: 5px; vertical-align: middle; }
+  header .legend .req::before { border-color: var(--req); }
+  header .legend .prov::before { border-color: var(--prov); }
+  header .legend .planned::before { border-top-style: dashed; }
+  header .legend .stub::before { border-top-style: dotted; }
+  header button { margin-left: auto; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); cursor: pointer; }
+  header button:hover { border-color: var(--accent); }
+  main { display: flex; height: calc(100% - 49px); }
+  #graph { flex: 1; overflow: auto; }
+  svg { display: block; }
+  aside { width: 420px; max-width: 50%; border-left: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 16px; }
+  aside .empty { color: var(--muted); }
+  aside h2 { font-size: 14px; margin: 0 0 4px; word-break: break-all; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .badge { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); margin-right: 6px; }
+  .badge.planned { border-style: dashed; }
+  .badge.stub { border-style: dotted; }
+  aside p.desc { margin: 10px 0 14px; }
+  .fn { border-top: 1px solid var(--line); padding: 10px 0; }
+  .fn code { display: block; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; background: var(--code); padding: 6px 8px; border-radius: 4px; white-space: pre-wrap; word-break: break-word; }
+  .fn .fdesc { margin: 6px 0; }
+  .fn details summary { cursor: pointer; color: var(--accent); font-size: 12px; }
+  .fn details .io { margin-top: 6px; }
+  .fn details .io b { color: var(--muted); font-weight: 500; font-size: 12px; display: block; margin-top: 4px; }
+  .deps { margin-top: 14px; font-size: 12px; color: var(--muted); }
+  .deps div { margin: 2px 0; }
+  .deps .r { color: var(--req); } .deps .p { color: var(--prov); }
+  @media (max-width: 720px) { main { flex-direction: column; } aside { width: auto; max-width: none; border-left: 0; border-top: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Codebase structure</h1>
+  <div class="legend">
+    <span class="req">requires (into selected)</span>
+    <span class="prov">provides (out of selected)</span>
+    <span class="planned">planned file</span>
+    <span class="stub">stub (exists, empty)</span>
+  </div>
+  <button id="toggleAll">Expand all examples</button>
+</header>
+<main>
+  <div id="graph"></div>
+  <aside id="panel"><div class="empty">Click a file to see what it requires, what it provides, and its function signatures.</div></aside>
+</main>
+
+<script src="structure.js"></script>
+<script>
+(function () {
+  const DATA = window.CODEBASE;
+  const ICON = { code: "", data: "📄 ", doc: "📄 ", config: "⚙️ ", external: "📦 " };
+  const NODE_W = 230, NODE_H = 30, GAP = 12, COL_W = 300, HEAD_H = 34, PAD = 30;
+
+  // ---- layout: one column per group, nodes stacked in data order
+  const groups = DATA.groups;
+  const byId = new Map();
+  const colCount = new Map(groups.map(g => [g.id, 0]));
+  DATA.nodes.forEach(n => {
+    const gi = groups.findIndex(g => g.id === n.group);
+    const i = colCount.get(n.group); colCount.set(n.group, i + 1);
+    n.x = PAD + gi * COL_W; n.y = PAD + HEAD_H + i * (NODE_H + GAP);
+    byId.set(n.path, n);
+  });
+  const width = PAD * 2 + groups.length * COL_W;
+  const height = PAD * 2 + HEAD_H + Math.max(...colCount.values()) * (NODE_H + GAP);
+
+  const svgNS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(svgNS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+
+  const svg = el("svg", { width, height, viewBox: `0 0 ${width} ${height}` }, document.getElementById("graph"));
+  const defs = el("defs", {}, svg);
+  for (const [id, color] of [["m-edge", "var(--edge)"], ["m-req", "var(--req)"], ["m-prov", "var(--prov)"]]) {
+    const m = el("marker", { id, viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, defs);
+    el("path", { d: "M0,0 L10,5 L0,10 z", fill: color }, m);
+  }
+
+  // group headers
+  groups.forEach((g, gi) => {
+    el("text", { x: PAD + gi * COL_W, y: PAD + 14, fill: "var(--muted)", "font-size": 12, "font-weight": 600 }, svg).textContent = g.label;
+    el("line", { x1: PAD + gi * COL_W, y1: PAD + 22, x2: PAD + gi * COL_W + NODE_W, y2: PAD + 22, stroke: "var(--line)" }, svg);
+  });
+
+  // edges: drawn provider -> consumer (arrowhead at the file that imports)
+  const edgeEls = [];
+  const edgeLayer = el("g", {}, svg);
+  DATA.edges.forEach(e => {
+    const consumer = byId.get(e.from), provider = byId.get(e.to);
+    if (!consumer || !provider) { console.warn("edge references unknown node", e); return; }
+    let x1, x2, c1, c2;
+    if (provider.x < consumer.x) { x1 = provider.x + NODE_W; x2 = consumer.x; c1 = x1 + 60; c2 = x2 - 60; }
+    else if (provider.x > consumer.x) { x1 = provider.x; x2 = consumer.x + NODE_W; c1 = x1 - 60; c2 = x2 + 60; }
+    else { x1 = provider.x + NODE_W; x2 = consumer.x + NODE_W; c1 = x1 + 70; c2 = x2 + 70; }
+    const y1 = provider.y + NODE_H / 2, y2 = consumer.y + NODE_H / 2;
+    const p = el("path", { d: `M${x1},${y1} C${c1},${y1} ${c2},${y2} ${x2},${y2}`, fill: "none",
+      stroke: "var(--edge)", "stroke-width": 1.5, "marker-end": "url(#m-edge)" }, edgeLayer);
+    if (e.kind === "dynamic") p.setAttribute("stroke-dasharray", "6 4");
+    if (e.kind === "reads") p.setAttribute("stroke-dasharray", "2 3");
+    el("title", {}, p).textContent = `${e.from}  ${e.kind}  ${e.to}`;
+    edgeEls.push({ e, p });
+  });
+
+  // nodes
+  const nodeEls = new Map();
+  DATA.nodes.forEach(n => {
+    const g = el("g", { cursor: "pointer" }, svg);
+    const r = el("rect", { x: n.x, y: n.y, width: NODE_W, height: NODE_H, rx: 6, fill: "var(--node)", stroke: "var(--node-stroke)", "stroke-width": 1.2 }, g);
+    if (n.status === "planned") r.setAttribute("stroke-dasharray", "6 3");
+    if (n.status === "stub") r.setAttribute("stroke-dasharray", "2 3");
+    const label = (ICON[n.kind] || "") + n.path.split("/").pop();
+    const t = el("text", { x: n.x + 10, y: n.y + NODE_H / 2 + 4, fill: "var(--node-ink)", "font-size": 12.5,
+      "font-family": n.kind === "code" ? "ui-monospace, Menlo, monospace" : "inherit" }, g);
+    t.textContent = label.length > 30 ? label.slice(0, 29) + "…" : label;
+    el("title", {}, g).textContent = `${n.path}\n${n.description}`;
+    g.addEventListener("click", ev => { ev.stopPropagation(); select(n.path); });
+    nodeEls.set(n.path, r);
+  });
+  svg.addEventListener("click", () => select(null));
+
+  // ---- selection + panel
+  let selected = null, allOpen = false;
+  const panel = document.getElementById("panel");
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  function select(path) {
+    selected = path;
+    nodeEls.forEach((r, p) => r.setAttribute("fill", p === path ? "var(--node-sel)" : "var(--node)"));
+    edgeEls.forEach(({ e, p }) => {
+      let cls = "edge";
+      if (path && e.from === path) cls = "req";      // selected imports e.to  -> arrow INTO selected
+      else if (path && e.to === path) cls = "prov";  // e.from imports selected -> arrow OUT of selected
+      p.setAttribute("stroke", `var(--${cls})`);
+      p.setAttribute("marker-end", `url(#m-${cls})`);
+      p.setAttribute("stroke-width", cls === "edge" ? 1.5 : 2.5);
+      p.setAttribute("opacity", path && cls === "edge" ? 0.35 : 1);
+      if (cls !== "edge") p.parentNode.appendChild(p); // raise highlighted edges
+    });
+    renderPanel();
+  }
+
+  function renderPanel() {
+    const n = selected && byId.get(selected);
+    if (!n) { panel.innerHTML = '<div class="empty">Click a file to see what it requires, what it provides, and its function signatures.</div>'; return; }
+    const requires = DATA.edges.filter(e => e.from === n.path).map(e => `<div class="r">⟵ requires ${esc(e.to)} <em>(${e.kind})</em></div>`).join("");
+    const provides = DATA.edges.filter(e => e.to === n.path).map(e => `<div class="p">⟶ provides to ${esc(e.from)} <em>(${e.kind})</em></div>`).join("");
+    const fns = n.functions.length ? n.functions.map(f => `
+      <div class="fn">
+        <code>${esc(f.signature)}</code>
+        <div class="fdesc">${esc(f.description)}</div>
+        <details ${allOpen ? "open" : ""}><summary>sample input / output</summary>
+          <div class="io"><b>input</b><code>${esc(f.example_input)}</code><b>output</b><code>${esc(f.example_output)}</code></div>
+        </details>
+      </div>`).join("") : '<div class="fn" style="color:var(--muted)">No functions (not a code file, or nothing public).</div>';
+    panel.innerHTML = `
+      <h2>${esc(n.path)}</h2>
+      <span class="badge ${n.status}">${n.status}</span><span class="badge">${n.kind}</span>
+      <p class="desc">${esc(n.description)}</p>
+      ${fns}
+      <div class="deps">${requires}${provides}${requires || provides ? "" : "<div>No recorded imports.</div>"}</div>`;
+  }
+
+  document.getElementById("toggleAll").addEventListener("click", function () {
+    allOpen = !allOpen;
+    this.textContent = allOpen ? "Collapse all examples" : "Expand all examples";
+    renderPanel();
+  });
+
+  select(null);
+})();
+</script>
+</body>
+</html>
