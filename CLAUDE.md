@@ -39,6 +39,11 @@ Array jobs set `SLURM_ARRAY_TASK_ID` env var; experiments can read it via `os.en
 
 If `which slurm` returns `slurm not found`, this means that you may be running locally on Mac. You may use CPU or MPS whichever which you find to be more efficient and run jobs in parallel. Please be mindful of system RAM and storage when on Mac.
 
+## Design Principles
+1. Use Markdown files as faithful and accessible human readable documentation to understand what is going on in the codebase
+
+2. Use infrastructure as code (e.g. Python files with constants, Grammar definitions, lexicons) over static files like .md which cannot be used programmatically (even over JSON which cannot support comments)
+
 ## Additional Collaboration Notes
 
 - Pushback if you feel that there is something that is not clear. You should be taking your high level instructions mainly from README.md and design docs which we collaborate on.

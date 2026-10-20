@@ -35,5 +35,21 @@ In this investigation of Zapanese --> Zenglish, we ask:
 
 - One potential answer to these questions is understanding how LLMs can mathematically bind and unbind Tensor Product Representations (TPRs) though this understanding is not clear at the moment.
 
+## Pipeline and Goals
+
+1. Train toy models on toy Context Free Grammar (CFG) to generate hypotheses on larger models
+    a. Toy models have increased control over the type of structures the model sees and is a faster test bed for iteration which can take advantage of the multi-node GPU cluster setup
+
+2. Run Residual Stream and Path Patching experiments with original and counterfactuals to generate hypotheses on the causal mechanisms used for translation
+
+3. Scale up experiments to larger models like [Olmo-3-7B-Instruct](allenai/Olmo-3-7B-Instruct)
+
+4. Run additional experiments using experimental hypotheses like Tensor Product Representations and QK Decomposition
+
+## Design Principles
+1. Use Markdown files as faithful and accessible human readable documentation to understand what is going on in the codebase
+
+2. Use infrastructure as code (e.g. Python files with constants, Grammar definitions, lexicons) over static files like .md which cannot be used programmatically (even over JSON which cannot support comments)
+
 ## Attribution
 The CLAUDE.md and structure are heavily inspired by Johnny Wei's [Allegro Project setup](https://github.com/johntzwei/allegro-project)
