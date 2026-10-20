@@ -51,5 +51,5 @@ In this investigation of Zapanese --> Zenglish, we ask:
 
 2. Use infrastructure as code (e.g. Python files with constants, Grammar definitions, lexicons) over static files like .md which cannot be used programmatically (even over JSON which cannot support comments)
 
-## Attribution
-The CLAUDE.md and structure are heavily inspired by Johnny Wei's [Allegro Project setup](https://github.com/johntzwei/allegro-project)
+## Template
+The CLAUDE.md and structure of this codebase are heavily inspired by Johnny Wei's [Allegro Project setup](https://github.com/johntzwei/allegro-project)

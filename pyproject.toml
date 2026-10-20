@@ -1,0 +1,41 @@
+# Project configuration for tbd-syntax. Managed with uv (see CLAUDE.md).
+#
+#   uv sync              install the environment into ./.venv
+#   uv run pytest        run tests
+#   uv run python src/grammar/zapanese_zenglish_simple/run.py --help
+#
+# Layout: every package lives under src/ (src-layout). Any directory under src/
+# that contains an __init__.py is auto-discovered and importable after `uv sync`,
+# e.g. `from grammar.abstract_grammar import Grammar`.
+
+[project]
+name = "tbd-syntax"
+version = "0.1.0"
+description = "Probing syntactic hierarchy in LLMs via Zapanese -> Zenglish translation"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # Dataset staging and upload (src/grammar/upload_hf.py)
+    "datasets>=3.0",
+    "huggingface-hub>=0.25",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+# Model training deps (torch, transformers, wandb) are intentionally not listed yet.
+# Add them as an optional group when the first training experiment lands, so the
+# grammar/dataset tooling stays installable without a GPU stack.
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
