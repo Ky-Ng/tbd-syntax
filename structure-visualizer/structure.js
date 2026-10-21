@@ -5,6 +5,7 @@
 //
 // node.kind   : "code" | "data" (paper emoji) | "doc" | "config" | "external"
 // node.status : "exists" | "stub" (file exists, body not written) | "planned" (not created yet)
+// node.files  : optional [{name, description}] for folder nodes; listed in the side panel.
 // edge        : {from, to, kind}  meaning  `from` imports / reads `to`.
 //               kind: "import" (static import), "dynamic" (importlib at runtime), "reads" (data file)
 //
@@ -157,14 +158,14 @@ window.CODEBASE = {
 
     // ---------------------------------------------------------------- experiment (next step)
     {
-      path: "src/grammar/zapanese_zenglish_simple/cfg.py", group: "experiment", kind: "code", status: "planned",
-      description: "NEXT STEP. Data only: the synchronous CFG as Rule instances (ternary flat rules; scrambling is one extra S rule) and the FRAME_IDS table mapping F01..F18 to metadata.",
+      path: "src/grammar/zapanese_zenglish_simple/cfg.py", group: "experiment", kind: "code", status: "exists",
+      description: "Data only: 15 Rule instances (8 matrix S variants enforcing one RC, 4 NP rules, 3 RC rules; ternary flat rules, scrambling = S_scr*) and FRAME_IDS mapping F01..F18 to metadata. Tested against the stimuli CSV.",
       functions: [
         {
           signature: "RULES: tuple[Rule, ...]",
-          description: "All rules. Scrambling = S -> NP_acc NP_nom V_t with perm (1, 2, 0).",
-          example_input: "RULES[1]",
-          example_output: 'Rule("S_trans_scr", "S", ("NP_acc", "NP_nom", "V_t"), (1, 2, 0), {"scrambled": True})',
+          description: "All rules. Scrambling = S_scr: S -> NP_acc NP_nom V_t with perm (1, 2, 0); S_scr_rcS / S_scr_rcO put the RC on the subject / object.",
+          example_input: "RULES[5]",
+          example_output: 'Rule("S_scr", "S", ("NP_acc", "NP_nom", "V_t"), (1, 2, 0), {"matrix": "trans", "scrambled": True, "rc_on": "none"})',
         },
         {
           signature: "FRAME_IDS: dict[str, dict[str, Any]]",
@@ -181,20 +182,20 @@ window.CODEBASE = {
       ],
     },
     {
-      path: "src/grammar/zapanese_zenglish_simple/lexicon.py", group: "experiment", kind: "code", status: "planned",
-      description: "NEXT STEP. Data only: N transitive verbs, N intransitive verbs, 2N nouns, case markers. Verb classes disjoint.",
+      path: "src/grammar/zapanese_zenglish_simple/lexicon.py", group: "experiment", kind: "code", status: "exists",
+      description: "Data only: N_VERBS = 13 transitive, 13 intransitive, 26 nouns (one animal per letter A-Z), case markers NOM / ACC. Verb classes disjoint (asserted).",
       functions: [
         {
           signature: "LEXICON: Lexicon",
           description: "The word lists.",
           example_input: 'LEXICON.words["V_i"]',
-          example_output: '("swims", "dances", ...)',
+          example_output: '("swims", "dances", "sleeps", "runs", "jumps", "sits", "laughs", "waits", "flies", "hides", "sings", "walks", "crawls")',
         },
       ],
     },
     {
-      path: "src/grammar/zapanese_zenglish_simple/splits.py", group: "experiment", kind: "code", status: "planned",
-      description: "NEXT STEP. Data only: the frame-level split (train / ood_level1 / ood_level2) and filling-level split (train/dev, select/report) from the research journal and README.",
+      path: "src/grammar/zapanese_zenglish_simple/splits.py", group: "experiment", kind: "code", status: "exists",
+      description: "Data only: frame-level split (train / ood_level1 / ood_level2) and filling-level split (train/dev 0.9/0.1, *_select/*_report 0.5/0.5), REPEAT = 1000, SEED = 0.",
       functions: [
         {
           signature: "SPLITS: SplitSpec",
@@ -205,21 +206,36 @@ window.CODEBASE = {
       ],
     },
     {
-      path: "src/grammar/zapanese_zenglish_simple/run.py", group: "experiment", kind: "code", status: "stub",
-      description: "NEXT STEP. Thin argparse wrapper: generate CSVs for this experiment and upload them to HF.",
+      path: "src/grammar/zapanese_zenglish_simple/run.py", group: "experiment", kind: "code", status: "exists",
+      description: "Thin argparse wrapper. `generate` writes frames/ (default) via generate_frames.generate; `upload` pushes frames.csv and filled/ as two HF datasets in one collection.",
       functions: [
         {
-          signature: "main() -> None",
-          description: "Subcommands: generate --out DIR ; upload --dir DIR [--private].",
-          example_input: "uv run python src/grammar/zapanese_zenglish_simple/run.py generate --out data/zapanese_zenglish_simple",
-          example_output: "CSV files written; table of row counts printed",
+          signature: "cmd_generate(out: Path) -> dict[str, Path]  /  cmd_upload(out: Path, private: bool) -> list[str]  /  main(argv: list[str] | None = None) -> None",
+          description: "Subcommands: generate [--out DIR] ; upload [--out DIR] [--private]. Default DIR is this folder's frames/.",
+          example_input: "uv run python src/grammar/zapanese_zenglish_simple/run.py generate",
+          example_output: "frames 18 rows, train 7504, dev 834, ood_level1_select 1500, ood_level1_report 1500, ood_level2_select 3000, ood_level2_report 3000",
         },
       ],
     },
     {
       path: "src/grammar/zapanese_zenglish_simple/stimuli_examples/Japanese RC Stimuli - RC Frames with Stimuli.csv", group: "experiment", kind: "data", status: "exists",
-      description: "Hand-written reference: the 18 frames with example fillings. Ground truth the real cfg.py will be tested against (next step).",
+      description: "Hand-written reference: the 18 frames with example fillings. Ground truth cfg.py is tested against.",
       functions: [],
+    },
+
+    {
+      path: "src/grammar/zapanese_zenglish_simple/frames/", group: "experiment", kind: "data", status: "exists",
+      description: "regenerated by run.py generate, published on the Hub",
+      functions: [],
+      files: [
+        { name: "frames.csv",                   description: "All 18 unfilled frames (preterminal yields, alignment, derivation, metadata) with their frame-level split; 18 rows." },
+        { name: "filled/train.csv",             description: "Training fillings: 90% of each train frame's fillings (no RC, or first-noun subject-gap RC); 7504 rows." },
+        { name: "filled/dev.csv",               description: "In-distribution held-out fillings of the train frames (other 10%), for checkpoint selection; 834 rows." },
+        { name: "filled/ood_level1_select.csv", description: "OOD level 1 (first-noun object-gap RC: F05, F10, F17), half used to select analysis checkpoints; 1500 rows." },
+        { name: "filled/ood_level1_report.csv", description: "OOD level 1, other half: the published accuracy; 1500 rows." },
+        { name: "filled/ood_level2_select.csv", description: "OOD level 2 (RC on the second noun: F04, F06, F07, F09, F13, F14), half used to select analysis checkpoints; 3000 rows." },
+        { name: "filled/ood_level2_report.csv", description: "OOD level 2, other half: the published accuracy; 3000 rows." },
+      ],
     },
 
     // ---------------------------------------------------------------- src/upload
@@ -260,6 +276,11 @@ window.CODEBASE = {
     },
 
     {
+      path: "tests/test_zapanese_zenglish_simple.py", group: "tests", kind: "code", status: "exists",
+      description: "Conformance: the enumerated frames equal the stimuli CSV row by row (both yields + metadata), the 14 same-Zenglish pairs hold, splits partition the 18 frames and match the README, lexicon shape.",
+      functions: [],
+    },
+    {
       path: "tests/test_upload_hf.py", group: "tests", kind: "code", status: "exists",
       description: "upload_dataset call sequence against a fake HfApi; input validation; upload_model stub.",
       functions: [],
@@ -296,6 +317,12 @@ window.CODEBASE = {
     { from: "src/grammar/zapanese_zenglish_simple/splits.py", to: "src/grammar/splits.py", kind: "import" },
     { from: "src/grammar/zapanese_zenglish_simple/run.py", to: "src/grammar/generate_frames.py", kind: "import" },
     { from: "src/grammar/zapanese_zenglish_simple/run.py", to: "src/upload/upload_hf.py", kind: "import" },
+    { from: "src/grammar/zapanese_zenglish_simple/run.py", to: "src/grammar/zapanese_zenglish_simple/cfg.py", kind: "import" },
+    { from: "src/grammar/zapanese_zenglish_simple/run.py", to: "src/grammar/zapanese_zenglish_simple/lexicon.py", kind: "import" },
+    { from: "src/grammar/zapanese_zenglish_simple/run.py", to: "src/grammar/zapanese_zenglish_simple/splits.py", kind: "import" },
+    { from: "src/grammar/zapanese_zenglish_simple/frames/", to: "src/grammar/zapanese_zenglish_simple/run.py", kind: "reads" },
+    { from: "tests/test_zapanese_zenglish_simple.py", to: "src/grammar/zapanese_zenglish_simple/cfg.py", kind: "import" },
+    { from: "tests/test_zapanese_zenglish_simple.py", to: "src/grammar/zapanese_zenglish_simple/stimuli_examples/Japanese RC Stimuli - RC Frames with Stimuli.csv", kind: "reads" },
     // upload
     { from: "src/upload/upload_hf.py", to: "huggingface_hub", kind: "import" },
     // tests

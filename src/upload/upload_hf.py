@@ -33,6 +33,7 @@ def upload_dataset(
     collection_title: str,
     private: bool = False,
     api: _HubApi | None = None,
+    patterns: list[str] | None = None,
 ) -> str:
     """Upload every ``*.csv`` under ``local_dir`` as a dataset repo and add it to a collection.
 
@@ -55,6 +56,9 @@ def upload_dataset(
         Datasets are public by default (project policy).
     api : HfApi-like, optional
         Injected for tests; defaults to ``huggingface_hub.HfApi()``.
+    patterns : list[str], optional
+        Glob patterns (relative to ``local_dir``) of files to upload. Defaults to
+        every CSV at any depth. Use ``["frames.csv"]`` to upload one file.
 
     Returns
     -------
@@ -73,8 +77,10 @@ def upload_dataset(
     readme_path = Path(readme_path)
     if not local_dir.is_dir():
         raise FileNotFoundError(f"{local_dir} is not a directory")
-    if not any(local_dir.rglob("*.csv")):
-        raise FileNotFoundError(f"no .csv files under {local_dir}")
+    if patterns is None:
+        patterns = ["*.csv", "**/*.csv"]
+    if not any(f for pat in patterns for f in local_dir.glob(pat)):
+        raise FileNotFoundError(f"no files matching {patterns} under {local_dir}")
     if not readme_path.is_file():
         raise FileNotFoundError(f"README not found: {readme_path}")
     if "/" not in repo_id:
@@ -88,7 +94,7 @@ def upload_dataset(
     namespace = repo_id.split("/", 1)[0]
     api.create_repo(repo_id, repo_type="dataset", private=private, exist_ok=True)
     api.upload_folder(folder_path=str(local_dir), repo_id=repo_id, repo_type="dataset",
-                      allow_patterns=["*.csv", "**/*.csv"])
+                      allow_patterns=patterns)
     api.upload_file(path_or_fileobj=str(readme_path), path_in_repo="README.md",
                     repo_id=repo_id, repo_type="dataset")
     collection = api.create_collection(collection_title, namespace=namespace, exists_ok=True)

@@ -24,10 +24,8 @@ Behavioral Analysis: If a model can translate OOD frames where the (1) training 
 
 2. Each Zapanese rule corresponds to a Zenglish rule. For a CFG written in Chomsky Normal Form, an example of the Zapanese rule being `VP -> NP V` would be `VP -> V NP`. 
 
-TODO: Note, it is unclear to me how to make the CFG also allow for scrambling (Object may occur before the Subject)
-
 ### Deliverable
-1. 3 .csv files, {train, val, test}, which will later be uploaded to HF Hub containing the frames for each partition
+1. Six CSC files detailed in Stimuli
 
 ## Stimuli
 

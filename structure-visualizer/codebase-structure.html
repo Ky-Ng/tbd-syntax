@@ -12,50 +12,68 @@
                     red arrows INTO it   = what it requires / imports
                     green arrows OUT     = what it provides to others
   Top-right button toggles every function's sample input/output open or closed.
+  Block colors are per column (group); the panel's "Contents" list is derived from each
+  function's `signature` in structure.js, so there is nothing extra to maintain.
 -->
 <style>
   :root {
     --bg: #f7f7f5; --panel: #ffffff; --ink: #1d1d1b; --muted: #6b6b66; --line: #d9d9d4;
     --node: #ffffff; --node-ink: #1d1d1b; --node-stroke: #8a8a84; --node-sel: #fff4cc;
     --edge: #b9b9b3; --req: #d23f3f; --prov: #2e9e4f; --code: #f0f0ec; --accent: #3b5bdb;
+    /* per-group block colors: fill / border */
+    --g0: #dbe7ff; --g0s: #3b6fd8; --g1: #ffe3c7; --g1s: #d9771f; --g2: #d7f2df; --g2s: #2f9a55;
+    --g3: #ecdcff; --g3s: #8a4fd6; --g4: #e4e4df; --g4s: #77776f; --g5: #ffd9e2; --g5s: #d0446b;
+    --g6: #d3f1f2; --g6s: #1f9ba3;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #161614; --panel: #1f1f1c; --ink: #ebebe6; --muted: #a0a099; --line: #3a3a36;
       --node: #262623; --node-ink: #ebebe6; --node-stroke: #777770; --node-sel: #4a3f14;
       --edge: #55554f; --req: #ff6b6b; --prov: #51cf66; --code: #2b2b27; --accent: #91a7ff;
+      --g0: #1d2b4a; --g0s: #7da2ff; --g1: #45301a; --g1s: #f5a254; --g2: #183b26; --g2s: #5fd38a;
+      --g3: #33244d; --g3s: #b98cff; --g4: #2e2e2a; --g4s: #a3a39b; --g5: #4a1f2b; --g5s: #ff7f9f;
+      --g6: #163d40; --g6s: #5fd4db;
     }
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
-    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   header { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
-  header h1 { font-size: 16px; margin: 0; font-weight: 600; }
-  header .legend { display: flex; gap: 14px; color: var(--muted); font-size: 12px; flex-wrap: wrap; }
+  header h1 { font-size: 19px; margin: 0; font-weight: 600; }
+  header .legend { display: flex; gap: 16px; color: var(--muted); font-size: 14px; flex-wrap: wrap; }
   header .legend span::before { content: ""; display: inline-block; width: 18px; height: 0; border-top: 2px solid var(--edge); margin-right: 5px; vertical-align: middle; }
   header .legend .req::before { border-color: var(--req); }
   header .legend .prov::before { border-color: var(--prov); }
   header .legend .planned::before { border-top-style: dashed; }
   header .legend .stub::before { border-top-style: dotted; }
-  header button { margin-left: auto; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); cursor: pointer; }
+  header button { margin-left: auto; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); cursor: pointer; font-size: 14px; }
   header button:hover { border-color: var(--accent); }
-  main { display: flex; height: calc(100% - 49px); }
+  main { display: flex; height: calc(100% - 56px); }
   #graph { flex: 1; overflow: auto; }
   svg { display: block; }
-  aside { width: 420px; max-width: 50%; border-left: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 16px; }
+  aside { width: 480px; max-width: 50%; border-left: 1px solid var(--line); background: var(--panel); overflow: auto; padding: 16px; }
   aside .empty { color: var(--muted); }
-  aside h2 { font-size: 14px; margin: 0 0 4px; word-break: break-all; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-  .badge { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); margin-right: 6px; }
+  aside h2 { font-size: 16px; margin: 0 0 4px; word-break: break-all; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .badge { display: inline-block; font-size: 13px; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--line); color: var(--muted); margin-right: 6px; }
   .badge.planned { border-style: dashed; }
   .badge.stub { border-style: dotted; }
   aside p.desc { margin: 10px 0 14px; }
   .fn { border-top: 1px solid var(--line); padding: 10px 0; }
-  .fn code { display: block; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; background: var(--code); padding: 6px 8px; border-radius: 4px; white-space: pre-wrap; word-break: break-word; }
+  .fn code { display: block; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; background: var(--code); padding: 6px 8px; border-radius: 4px; white-space: pre-wrap; word-break: break-word; }
   .fn .fdesc { margin: 6px 0; }
-  .fn details summary { cursor: pointer; color: var(--accent); font-size: 12px; }
+  .fn details summary { cursor: pointer; color: var(--accent); font-size: 14px; }
   .fn details .io { margin-top: 6px; }
-  .fn details .io b { color: var(--muted); font-weight: 500; font-size: 12px; display: block; margin-top: 4px; }
-  .deps { margin-top: 14px; font-size: 12px; color: var(--muted); }
+  .fn details .io b { color: var(--muted); font-weight: 500; font-size: 14px; display: block; margin-top: 4px; }
+  .contents { margin: 0 0 16px; padding: 10px 12px; background: var(--code); border-radius: 6px; }
+  .contents h3, .sigs-h { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 6px; font-weight: 600; }
+  .contents ul { list-style: none; margin: 0; padding: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px; }
+  .contents li { margin: 2px 0; }
+  .contents ul.files li { margin: 0 0 8px; }
+  .contents ul.files .fdesc { font-family: system-ui, sans-serif; font-size: 14px; color: var(--muted); }
+  .contents ul ul { padding-left: 22px; }
+  .contents .k { display: inline-block; min-width: 44px; font-family: system-ui, sans-serif; font-size: 12px; color: var(--muted); }
+  .contents .stubtag { font-family: system-ui, sans-serif; font-size: 12px; color: var(--muted); margin-left: 6px; }
+  .deps { margin-top: 14px; font-size: 14px; color: var(--muted); }
   .deps div { margin: 2px 0; }
   .deps .r { color: var(--req); } .deps .p { color: var(--prov); }
   @media (max-width: 720px) { main { flex-direction: column; } aside { width: auto; max-width: none; border-left: 0; border-top: 1px solid var(--line); } }
@@ -82,7 +100,8 @@
 (function () {
   const DATA = window.CODEBASE;
   const ICON = { code: "", data: "📄 ", doc: "📄 ", config: "⚙️ ", external: "📦 " };
-  const NODE_W = 230, NODE_H = 30, GAP = 12, COL_W = 300, HEAD_H = 34, PAD = 30;
+  const NODE_W = 280, NODE_H = 38, GAP = 14, COL_W = 350, HEAD_H = 60, PAD = 30;
+  const PALETTE_SIZE = 7; // number of --gN color pairs defined in CSS
 
   // ---- layout: one column per group, nodes stacked in data order
   const groups = DATA.groups;
@@ -109,9 +128,21 @@
   }
 
   // group headers
+  // Labels like "src/foo  (note)" become two lines: the path, then the note in smaller text.
+  // Any line wider than its column is shrunk to fit so neighbouring headers never overlap.
+  const HEAD_MAX_W = COL_W - 20;
   groups.forEach((g, gi) => {
-    el("text", { x: PAD + gi * COL_W, y: PAD + 14, fill: "var(--muted)", "font-size": 12, "font-weight": 600 }, svg).textContent = g.label;
-    el("line", { x1: PAD + gi * COL_W, y1: PAD + 22, x2: PAD + gi * COL_W + NODE_W, y2: PAD + 22, stroke: "var(--line)" }, svg);
+    const x = PAD + gi * COL_W, color = `var(--g${gi % PALETTE_SIZE}s)`;
+    const [main, ...rest] = g.label.split(/\s{2,}/);
+    const lines = [[main, 15, 700, PAD + 14], [rest.join(" "), 13, 500, PAD + 32]].filter(l => l[0]);
+    lines.forEach(([txt, size, weight, y]) => {
+      const t = el("text", { x, y, fill: color, "font-size": size, "font-weight": weight }, svg);
+      t.textContent = txt;
+      el("title", {}, t).textContent = g.label;
+      const w = t.getComputedTextLength();
+      if (w > HEAD_MAX_W) t.setAttribute("font-size", (size * HEAD_MAX_W / w).toFixed(2));
+    });
+    el("line", { x1: x, y1: PAD + 42, x2: x + NODE_W, y2: PAD + 42, stroke: color, "stroke-width": 2 }, svg);
   });
 
   // edges: drawn provider -> consumer (arrowhead at the file that imports)
@@ -135,18 +166,23 @@
 
   // nodes
   const nodeEls = new Map();
+  const groupIdx = new Map(groups.map((g, i) => [g.id, i % PALETTE_SIZE]));
   DATA.nodes.forEach(n => {
+    const gi = groupIdx.get(n.group);
+    n.fill = `var(--g${gi})`; n.stroke = `var(--g${gi}s)`;
     const g = el("g", { cursor: "pointer" }, svg);
-    const r = el("rect", { x: n.x, y: n.y, width: NODE_W, height: NODE_H, rx: 6, fill: "var(--node)", stroke: "var(--node-stroke)", "stroke-width": 1.2 }, g);
+    const r = el("rect", { x: n.x, y: n.y, width: NODE_W, height: NODE_H, rx: 7, fill: n.fill, stroke: n.stroke, "stroke-width": 1.5 }, g);
     if (n.status === "planned") r.setAttribute("stroke-dasharray", "6 3");
     if (n.status === "stub") r.setAttribute("stroke-dasharray", "2 3");
-    const label = (ICON[n.kind] || "") + n.path.split("/").pop();
-    const t = el("text", { x: n.x + 10, y: n.y + NODE_H / 2 + 4, fill: "var(--node-ink)", "font-size": 12.5,
+    // folder paths end in "/": show the folder name, e.g. "frames/"
+    const base = n.path.endsWith("/") ? n.path.slice(0, -1).split("/").pop() + "/" : n.path.split("/").pop();
+    const label = (ICON[n.kind] || "") + base;
+    const t = el("text", { x: n.x + 10, y: n.y + NODE_H / 2 + 5, fill: "var(--node-ink)", "font-size": 15,
       "font-family": n.kind === "code" ? "ui-monospace, Menlo, monospace" : "inherit" }, g);
-    t.textContent = label.length > 30 ? label.slice(0, 29) + "…" : label;
+    t.textContent = label.length > 29 ? label.slice(0, 28) + "…" : label;
     el("title", {}, g).textContent = `${n.path}\n${n.description}`;
     g.addEventListener("click", ev => { ev.stopPropagation(); select(n.path); });
-    nodeEls.set(n.path, r);
+    nodeEls.set(n.path, { r, n });
   });
   svg.addEventListener("click", () => select(null));
 
@@ -157,7 +193,12 @@
 
   function select(path) {
     selected = path;
-    nodeEls.forEach((r, p) => r.setAttribute("fill", p === path ? "var(--node-sel)" : "var(--node)"));
+    nodeEls.forEach(({ r, n }, p) => {
+      const on = p === path;
+      r.setAttribute("fill", on ? "var(--node-sel)" : n.fill);
+      r.setAttribute("stroke", on ? "var(--ink)" : n.stroke);
+      r.setAttribute("stroke-width", on ? 3 : 1.5);
+    });
     edgeEls.forEach(({ e, p }) => {
       let cls = "edge";
       if (path && e.from === path) cls = "req";      // selected imports e.to  -> arrow INTO selected
@@ -169,6 +210,42 @@
       if (cls !== "edge") p.parentNode.appendChild(p); // raise highlighted edges
     });
     renderPanel();
+  }
+
+  // Names only (no parameters) parsed from signatures like "Rule(name: str, ...)",
+  // "Frame.fill(self, ...) -> ...", "RULES: tuple[...]", or several joined by " / ".
+  function parseNames(sig) {
+    return sig.split(/\s+\/\s+/).map(part => {
+      const m = part.trim().match(/^([A-Za-z_][\w.]*)/);
+      if (!m) return null;
+      const name = m[1], rest = part.trim().slice(name.length), last = name.split(".").pop();
+      let kind;
+      if (/^[A-Z][A-Z0-9_]*$/.test(last)) kind = "const";
+      else if (/^[A-Z]/.test(last) && rest.startsWith("(")) kind = "class";
+      else if (name.includes(".")) kind = rest.startsWith("(") ? "method" : "prop";
+      else kind = "def";
+      return { name, kind, stub: /\[stub\]/.test(part) };
+    }).filter(Boolean);
+  }
+
+  function renderContents(fns) {
+    const items = fns.flatMap(f => parseNames(f.signature));
+    if (!items.length) return "";
+    const classes = new Map(items.filter(i => i.kind === "class").map(i => [i.name, { ...i, members: [] }]));
+    const top = [];
+    items.forEach(i => {
+      if (i.kind === "class") { if (!top.includes(classes.get(i.name))) top.push(classes.get(i.name)); return; }
+      const owner = i.name.includes(".") && classes.get(i.name.split(".")[0]);
+      if (owner && (i.kind === "method" || i.kind === "prop")) owner.members.push(i);
+      else top.push(i);
+    });
+    const order = { class: 0, def: 1, method: 1, prop: 1, const: 2 };
+    top.sort((a, b) => order[a.kind] - order[b.kind]);
+    const li = i => `<li><span class="k">${i.kind}</span>${esc(i.name)}${i.kind === "def" || i.kind === "method" ? "()" : ""}`
+      + `${i.stub ? '<span class="stubtag">[stub]</span>' : ""}`
+      + (i.members && i.members.length ? `<ul>${i.members.map(m => `<li>.${esc(m.name.split(".").pop())}${m.kind === "method" ? "()" : ""}</li>`).join("")}</ul>` : "")
+      + "</li>";
+    return `<div class="contents"><h3>Contents</h3><ul>${top.map(li).join("")}</ul></div>`;
   }
 
   function renderPanel() {
@@ -188,6 +265,10 @@
       <h2>${esc(n.path)}</h2>
       <span class="badge ${n.status}">${n.status}</span><span class="badge">${n.kind}</span>
       <p class="desc">${esc(n.description)}</p>
+      ${n.files && n.files.length ? `<div class="contents"><h3>Files</h3><ul class="files">${n.files.map(f =>
+        `<li><b>${esc(f.name)}</b><div class="fdesc">${esc(f.description)}</div></li>`).join("")}</ul></div>` : ""}
+      ${renderContents(n.functions)}
+      ${n.functions.length ? '<div class="sigs-h">Signatures</div>' : ""}
       ${fns}
       <div class="deps">${requires}${provides}${requires || provides ? "" : "<div>No recorded imports.</div>"}</div>`;
   }
