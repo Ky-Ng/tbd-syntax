@@ -17,17 +17,17 @@ configs:
 - config_name: default
   data_files:
   - split: train
-    path: filled/train.csv
+    path: train.csv
   - split: dev
-    path: filled/dev.csv
+    path: dev.csv
   - split: ood_level1_select
-    path: filled/ood_level1_select.csv
+    path: ood_level1_select.csv
   - split: ood_level1_report
-    path: filled/ood_level1_report.csv
+    path: ood_level1_report.csv
   - split: ood_level2_select
-    path: filled/ood_level2_select.csv
+    path: ood_level2_select.csv
   - split: ood_level2_report
-    path: filled/ood_level2_report.csv
+    path: ood_level2_report.csv
 ---
 
 # Zapanese to Zenglish: filled sentences
