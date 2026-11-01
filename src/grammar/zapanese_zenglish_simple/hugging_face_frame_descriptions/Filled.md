@@ -114,6 +114,34 @@ word may fill several slots (`yak NOM yak ACC likes` is legal). Frame F11
 (`SUBJ NOM VERB`) has only 338 possible sentences, so it contributes 338 rows
 instead of 1000. No sentence appears in two subsets.
 
+### Lexicalisations per frame
+
+"Possible" is the size of the Cartesian product of the lexicon over the frame's slots
+(26 nouns, 13 transitive verbs, 13 intransitive verbs, one token each for `NOM` and `ACC`).
+"Sampled" is how many of those are in this dataset.
+
+| Frame | Split | Zapanese slots | Possible fillings | Sampled | Rows per subset |
+|---|---|---|---|---|---|
+| F01 | train | `N NOM N ACC V_t` | 8,788 | 1000 | train: 900, dev: 100 |
+| F02 | train | `N ACC N NOM V_t` | 8,788 | 1000 | train: 900, dev: 100 |
+| F03 | train | `N ACC V_t N NOM N ACC V_t` | 2,970,344 | 1000 | train: 900, dev: 100 |
+| F08 | train | `N ACC V_t N ACC N NOM V_t` | 2,970,344 | 1000 | train: 900, dev: 100 |
+| F11 | train | `N NOM V_i` | 338 | 338 | train: 304, dev: 34 |
+| F12 | train | `V_i N NOM N ACC V_t` | 114,244 | 1000 | train: 900, dev: 100 |
+| F15 | train | `V_i N ACC N NOM V_t` | 114,244 | 1000 | train: 900, dev: 100 |
+| F16 | train | `N ACC V_t N NOM V_i` | 114,244 | 1000 | train: 900, dev: 100 |
+| F18 | train | `V_i N NOM V_i` | 4,394 | 1000 | train: 900, dev: 100 |
+| F05 | ood_level1 | `N NOM V_t N NOM N ACC V_t` | 2,970,344 | 1000 | ood_level1_select: 500, ood_level1_report: 500 |
+| F10 | ood_level1 | `N NOM V_t N ACC N NOM V_t` | 2,970,344 | 1000 | ood_level1_select: 500, ood_level1_report: 500 |
+| F17 | ood_level1 | `N NOM V_t N NOM V_i` | 114,244 | 1000 | ood_level1_select: 500, ood_level1_report: 500 |
+| F04 | ood_level2 | `N NOM N ACC V_t N ACC V_t` | 2,970,344 | 1000 | ood_level2_select: 500, ood_level2_report: 500 |
+| F06 | ood_level2 | `N NOM N NOM V_t N ACC V_t` | 2,970,344 | 1000 | ood_level2_select: 500, ood_level2_report: 500 |
+| F07 | ood_level2 | `N ACC N ACC V_t N NOM V_t` | 2,970,344 | 1000 | ood_level2_select: 500, ood_level2_report: 500 |
+| F09 | ood_level2 | `N ACC N NOM V_t N NOM V_t` | 2,970,344 | 1000 | ood_level2_select: 500, ood_level2_report: 500 |
+| F13 | ood_level2 | `N NOM V_i N ACC V_t` | 114,244 | 1000 | ood_level2_select: 500, ood_level2_report: 500 |
+| F14 | ood_level2 | `N ACC V_i N NOM V_t` | 114,244 | 1000 | ood_level2_select: 500, ood_level2_report: 500 |
+| **total** | | | 24,470,524 | 17338 | |
+
 ## The 18 frames
 
 `[...]` marks the relative clause and `__` its gap; both are reading aids only.

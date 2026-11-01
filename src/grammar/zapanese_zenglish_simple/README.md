@@ -16,7 +16,7 @@ Behavioral Analysis: If a model can translate OOD frames where the (1) training 
 
 2. Similarly, generalizing to unseen frames is a strong indicator but not guarantee of a hiearchical algorithm
 
-3. The resutls from small models may not generalize to larger models
+3. The results from small models may not generalize to larger models
 
 ## Methods
 
@@ -68,7 +68,7 @@ The last column lists Zapanese frames that translate to the *same* Zenglish fram
 
 ### Filling-level split
 
-Within each frame, `REPEAT` filled sentences are sampled without replacement from the lexicon (same noun may fill several slots, e.g. `dog NOM dog ACC chases`), then divided into disjoint subsets with a fixed seed. Frames are never split between subsets; only sentences are. This removes filling-level noise from checkpoint selection without changing the frame-level question.
+Within each frame, `REPEAT` filled sentences are sampled without replacement from the lexicon (though same noun may fill several slots, e.g. `dog NOM dog ACC chases` but no two filled in frames from the same frame FXY can be the same), then divided into disjoint subsets with a fixed seed. Frames are never split between subsets; only sentences are. This removes filling-level noise from checkpoint selection without changing the frame-level question.
 
 | Frame split | Filling subset | Purpose |
 |---|---|---|

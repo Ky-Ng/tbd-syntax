@@ -25,14 +25,11 @@ import argparse
 from pathlib import Path
 
 from grammar.generate_frames import generate
+from grammar.zapanese_zenglish_simple import COLLECTION, HF_FILLED_REPO, HF_FRAMES_REPO
 from grammar.zapanese_zenglish_simple.cfg import GRAMMAR
 from grammar.zapanese_zenglish_simple.lexicon import LEXICON
 from grammar.zapanese_zenglish_simple.splits import SPLITS
 from upload.upload_hf import upload_dataset
-
-EXPERIMENT = "zapanese_zenglish_simple"
-HF_USER = "kylelovesllms"
-COLLECTION = f"translation-syntax-datasets-{EXPERIMENT}"
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_OUT = HERE / "frames"
@@ -77,9 +74,9 @@ def cmd_upload(out: Path, private: bool) -> list[str]:
     if not (out / "frames.csv").is_file() or not (out / "filled").is_dir():
         raise SystemExit(f"{out} does not contain frames.csv and filled/; run `generate` first")
     urls = [
-        upload_dataset(out, f"{HF_USER}/{EXPERIMENT}-frames", CARDS / "Frames.md", COLLECTION,
+        upload_dataset(out, HF_FRAMES_REPO, CARDS / "Frames.md", COLLECTION,
                        private=private, patterns=["frames.csv"]),
-        upload_dataset(out / "filled", f"{HF_USER}/{EXPERIMENT}-filled", CARDS / "Filled.md", COLLECTION,
+        upload_dataset(out / "filled", HF_FILLED_REPO, CARDS / "Filled.md", COLLECTION,
                        private=private),
     ]
     for u in urls:

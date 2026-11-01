@@ -61,7 +61,7 @@ If `which slurm` returns `slurm not found`, this means that you may be running l
 
 - When saving model checkpoints, save them in the experiments ./artifacts folder as a staging before uploading to my account, "kylelovesllms". Use a model collection named `translation-syntax-<folder-name>-<STEPS>` (e.g. `translation-syntax-01_grammar_v1-gpt2-2l2h128d10ep256bsz3lr01drop-1000`) 
 
-- Log training runs to Wandb. Use filters programatically and ask me often which Project I would like to put the wandb output run into. Specifically, I prefer having more fine grained Groups (e.g. model, seed). Different datasets and steps should be logged as separate Projects named `<Model>-<Dataset>-<Steps>`
+- Log training runs to Wandb and ask me which Project a run goes into. One Project per experiment and step budget, named `<Experiment>-<Steps>`; `group` = model slug (e.g. `gpt2-2l4h256d`), `job_type` = `seed<N>`, and the run config carries `n_layer`, `n_head`, `d_model`, `seed` so the UI can group by any combination at once (e.g. heads x seed)
 
     - Model run json launch scripts should be saved in ./artifacts and in the Wandb config (Wandb should also have the path to the config script)
 

@@ -14,6 +14,9 @@
   Top-right button toggles every function's sample input/output open or closed.
   Block colors are per column (group); the panel's "Contents" list is derived from each
   function's `signature` in structure.js, so there is nothing extra to maintain.
+  Groups may carry a `row` id (see structure.js `rows`): rows are stacked top to bottom and
+  separated by a labelled divider band, e.g. "grammar generation" above, "training" below.
+  Dashed block borders = planned files (designed, not yet written); dotted = stubs.
 -->
 <style>
   :root {
@@ -101,20 +104,36 @@
   const DATA = window.CODEBASE;
   const ICON = { code: "", data: "📄 ", doc: "📄 ", config: "⚙️ ", external: "📦 " };
   const NODE_W = 280, NODE_H = 38, GAP = 14, COL_W = 350, HEAD_H = 60, PAD = 30;
+  const DIV_H = 64; // height of the labelled divider band drawn between two rows
   const PALETTE_SIZE = 7; // number of --gN color pairs defined in CSS
 
-  // ---- layout: one column per group, nodes stacked in data order
+  // ---- layout: one column per group, nodes stacked in data order.
+  // Groups are assigned to rows (group.row, default = first entry of DATA.rows); each row is a
+  // band of columns, rows are stacked vertically with a DIV_H divider between consecutive rows.
   const groups = DATA.groups;
+  const rows = (DATA.rows && DATA.rows.length) ? DATA.rows : [{ id: "all", label: "" }];
+  const rowIdx = new Map(rows.map((r, i) => [r.id, i]));
+  const colInRow = new Map();                      // group id -> column index within its row
+  const colsPerRow = rows.map(() => 0);
+  groups.forEach(g => {
+    const ri = rowIdx.has(g.row) ? rowIdx.get(g.row) : 0;
+    g.ri = ri; colInRow.set(g.id, colsPerRow[ri]); colsPerRow[ri] += 1;
+  });
   const byId = new Map();
   const colCount = new Map(groups.map(g => [g.id, 0]));
+  DATA.nodes.forEach(n => { colCount.set(n.group, colCount.get(n.group) + 1); });
+  const rowH = rows.map((r, ri) => HEAD_H + Math.max(0, ...groups.filter(g => g.ri === ri).map(g => colCount.get(g.id))) * (NODE_H + GAP));
+  const rowTop = rows.map((r, ri) => PAD + rowH.slice(0, ri).reduce((a, b) => a + b, 0) + ri * DIV_H);
+  colCount.forEach((v, k) => colCount.set(k, 0));
+  const groupX = g => PAD + colInRow.get(g.id) * COL_W;
   DATA.nodes.forEach(n => {
-    const gi = groups.findIndex(g => g.id === n.group);
+    const g = groups.find(g => g.id === n.group);
     const i = colCount.get(n.group); colCount.set(n.group, i + 1);
-    n.x = PAD + gi * COL_W; n.y = PAD + HEAD_H + i * (NODE_H + GAP);
+    n.x = groupX(g); n.y = rowTop[g.ri] + HEAD_H + i * (NODE_H + GAP);
     byId.set(n.path, n);
   });
-  const width = PAD * 2 + groups.length * COL_W;
-  const height = PAD * 2 + HEAD_H + Math.max(...colCount.values()) * (NODE_H + GAP);
+  const width = PAD * 2 + Math.max(...colsPerRow) * COL_W;
+  const height = PAD * 2 + rowH.reduce((a, b) => a + b, 0) + (rows.length - 1) * DIV_H;
 
   const svgNS = "http://www.w3.org/2000/svg";
   const el = (tag, attrs, parent) => { const e = document.createElementNS(svgNS, tag);
@@ -132,9 +151,9 @@
   // Any line wider than its column is shrunk to fit so neighbouring headers never overlap.
   const HEAD_MAX_W = COL_W - 20;
   groups.forEach((g, gi) => {
-    const x = PAD + gi * COL_W, color = `var(--g${gi % PALETTE_SIZE}s)`;
+    const x = groupX(g), top = rowTop[g.ri], color = `var(--g${gi % PALETTE_SIZE}s)`;
     const [main, ...rest] = g.label.split(/\s{2,}/);
-    const lines = [[main, 15, 700, PAD + 14], [rest.join(" "), 13, 500, PAD + 32]].filter(l => l[0]);
+    const lines = [[main, 15, 700, top + 14], [rest.join(" "), 13, 500, top + 32]].filter(l => l[0]);
     lines.forEach(([txt, size, weight, y]) => {
       const t = el("text", { x, y, fill: color, "font-size": size, "font-weight": weight }, svg);
       t.textContent = txt;
@@ -142,7 +161,22 @@
       const w = t.getComputedTextLength();
       if (w > HEAD_MAX_W) t.setAttribute("font-size", (size * HEAD_MAX_W / w).toFixed(2));
     });
-    el("line", { x1: x, y1: PAD + 42, x2: x + NODE_W, y2: PAD + 42, stroke: color, "stroke-width": 2 }, svg);
+    el("line", { x1: x, y1: top + 42, x2: x + NODE_W, y2: top + 42, stroke: color, "stroke-width": 2 }, svg);
+  });
+
+  // row dividers: a full-width rule between consecutive rows, labelled with the row above
+  // ("▲ …") and the row below ("▼ …"), styled like the panel's section headings.
+  rows.forEach((r, ri) => {
+    if (ri === 0) return;
+    const yMid = rowTop[ri] - DIV_H / 2, x1 = PAD - 10, x2 = width - PAD + 10;
+    el("line", { x1, y1: yMid, x2, y2: yMid, stroke: "var(--node-stroke)", "stroke-width": 2 }, svg);
+    const lbl = (txt, y) => {
+      const t = el("text", { x: PAD, y, fill: "var(--muted)", "font-size": 13, "font-weight": 600,
+        "letter-spacing": ".04em", style: "text-transform: uppercase" }, svg);
+      t.textContent = txt;
+    };
+    if (rows[ri - 1].label) lbl("▲ " + rows[ri - 1].label, yMid - 9);
+    if (r.label) lbl("▼ " + r.label, yMid + 20);
   });
 
   // edges: drawn provider -> consumer (arrowhead at the file that imports)
